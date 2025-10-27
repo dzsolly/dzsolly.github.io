@@ -66,30 +66,15 @@
       font-size: 0.9rem;
     }
 
-    /* RESPONSIVE DESIGN */
     @media (max-width: 768px) {
-      header h1 {
-        font-size: 1.8rem;
-      }
-      header p {
-        font-size: 1rem;
-        padding: 0 1rem;
-      }
-      .card {
-        padding: 1.2rem;
-      }
+      header h1 { font-size: 1.8rem; }
+      header p { font-size: 1rem; padding: 0 1rem; }
+      .card { padding: 1.2rem; }
     }
-
     @media (max-width: 480px) {
-      header {
-        padding: 2rem 1rem 1rem;
-      }
-      main {
-        padding: 0 1rem 3rem;
-      }
-      .card h2 {
-        font-size: 1.1rem;
-      }
+      header { padding: 2rem 1rem 1rem; }
+      main { padding: 0 1rem 3rem; }
+      .card h2 { font-size: 1.1rem; }
     }
   </style>
 </head>
@@ -120,7 +105,12 @@
         const container = document.getElementById("repo-list");
         container.innerHTML = "";
 
-        repos.forEach(repo => {
+        // Kizárjuk a GitHub Pages repo-t (index.html-t tartalmazó repo)
+        const excludedRepoName = "dzsolly.github.io";
+
+        const filteredRepos = repos.filter(repo => repo.name !== excludedRepoName);
+
+        filteredRepos.forEach(repo => {
           const card = document.createElement("div");
           card.className = "card";
           card.innerHTML = `
@@ -129,6 +119,10 @@
           `;
           container.appendChild(card);
         });
+
+        if (!filteredRepos.length) {
+          container.innerHTML = "<p style='text-align:center;color:#8b949e;'>No repositories to display.</p>";
+        }
       } catch (error) {
         document.getElementById("repo-list").innerHTML = "<p style='text-align:center;color:#ff6b6b;'>Failed to load repositories.</p>";
       }
