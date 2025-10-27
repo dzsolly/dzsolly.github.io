@@ -3,130 +3,134 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dzsolly // github.io</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <title>dzsolly • GitHub Projects</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Roboto Mono', monospace;
+      font-family: "Inter", Arial, sans-serif;
       background: #0d1117;
-      color: #c9d1d9;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      color: #e6edf3;
+      margin: 0;
+      padding: 0;
     }
     header {
       text-align: center;
-      padding: 60px 20px 30px;
+      padding: 3rem 1rem 1rem;
     }
     header h1 {
       font-size: 2.2rem;
-      color: #58a6ff;
       margin: 0;
     }
     header p {
+      font-size: 1.1rem;
       color: #8b949e;
-      margin: 10px 0 0;
+      max-width: 600px;
+      margin: 0.5rem auto 2rem;
+      line-height: 1.6;
     }
     main {
-      flex: 1;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    h2 {
-      color: #58a6ff;
-      margin-top: 2rem;
-      border-bottom: 1px solid #21262d;
-      padding-bottom: 6px;
-    }
-    .repo-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      padding: 0 2rem 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
     }
-    .repo-card {
+    .card {
       background: #161b22;
       border: 1px solid #30363d;
       border-radius: 12px;
-      padding: 20px;
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      padding: 1.5rem;
+      transition: all 0.2s ease;
     }
-    .repo-card:hover {
-      transform: translateY(-4px);
+    .card:hover {
+      transform: translateY(-5px);
       border-color: #58a6ff;
+      box-shadow: 0 0 15px rgba(88, 166, 255, 0.2);
     }
-    .repo-card h3 {
-      margin: 0 0 10px;
+    .card h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.3rem;
       color: #58a6ff;
-      font-size: 1.1rem;
     }
-    .repo-card p {
+    .card p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #8b949e;
+      line-height: 1.5;
+    }
+    .footer {
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid #30363d;
       color: #8b949e;
       font-size: 0.9rem;
-      margin-bottom: 10px;
-      min-height: 40px;
     }
-    .repo-card a {
-      color: #c9d1d9;
-      text-decoration: none;
-      background: #21262d;
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 0.8rem;
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.8rem;
+      }
+      header p {
+        font-size: 1rem;
+        padding: 0 1rem;
+      }
+      .card {
+        padding: 1.2rem;
+      }
     }
-    .repo-card a:hover {
-      background: #58a6ff;
-      color: #0d1117;
-    }
-    footer {
-      text-align: center;
-      padding: 20px;
-      color: #6e7681;
-      border-top: 1px solid #21262d;
-      font-size: 0.9rem;
+
+    @media (max-width: 480px) {
+      header {
+        padding: 2rem 1rem 1rem;
+      }
+      main {
+        padding: 0 1rem 3rem;
+      }
+      .card h2 {
+        font-size: 1.1rem;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>dzsolly.github.io</h1>
-    <p>Minimal tech page powered by GitHub Pages</p>
+    <h1>Welcome to dzsolly's GitHub Space 🚀</h1>
+    <p>
+      Hi, I’m Dzsolly — a tech enthusiast exploring Linux, automation, and open-source systems.  
+      Below you’ll find some of my public repositories with short descriptions and direct links.
+    </p>
   </header>
 
-  <main>
-    <h2>Repositories</h2>
-    <div id="repo-grid" class="repo-grid">Loading repositories...</div>
+  <main id="repo-list">
+    <p style="text-align:center;">Loading repositories...</p>
   </main>
 
-  <footer>
-    © 2025 dzsolly — hosted on <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>
-  </footer>
+  <div class="footer">
+    © <span id="year"></span> dzsolly • Powered by GitHub Pages
+  </div>
 
   <script>
-    async function loadRepos() {
-      const username = "dzsolly";
-      const container = document.getElementById("repo-grid");
+    document.getElementById("year").textContent = new Date().getFullYear();
 
+    async function loadRepos() {
       try {
-        const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
+        const response = await fetch("https://api.github.com/users/dzsolly/repos?sort=updated");
         const repos = await response.json();
+        const container = document.getElementById("repo-list");
         container.innerHTML = "";
 
         repos.forEach(repo => {
           const card = document.createElement("div");
-          card.className = "repo-card";
+          card.className = "card";
           card.innerHTML = `
-            <h3>${repo.name}</h3>
+            <h2><a href="${repo.html_url}" target="_blank" style="text-decoration:none;color:#58a6ff;">${repo.name}</a></h2>
             <p>${repo.description ? repo.description : "No description available."}</p>
-            <a href="${repo.html_url}" target="_blank">View on GitHub</a>
           `;
           container.appendChild(card);
         });
       } catch (error) {
-        container.innerHTML = "<p>Failed to load repositories.</p>";
-        console.error(error);
+        document.getElementById("repo-list").innerHTML = "<p style='text-align:center;color:#ff6b6b;'>Failed to load repositories.</p>";
       }
     }
 
