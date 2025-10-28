@@ -1,14 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hu">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dzsolly • GitHub Projects</title>
   <style>
+    :root{
+      --bg:#0d1117;
+      --card:#161b22;
+      --muted:#8b949e;
+      --accent:#58a6ff;
+      --border:#30363d;
+      --text:#e6edf3;
+    }
+    html,body{height:100%}
     body {
       font-family: "Inter", Arial, sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
+      background: var(--bg);
+      color: var(--text);
       margin: 0;
       padding: 0;
     }
@@ -22,7 +31,7 @@
     }
     header p {
       font-size: 1.1rem;
-      color: #8b949e;
+      color: var(--muted);
       max-width: 600px;
       margin: 0.5rem auto 2rem;
       line-height: 1.6;
@@ -36,35 +45,54 @@
       margin: 0 auto;
     }
     .card {
-      background: #161b22;
-      border: 1px solid #30363d;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.5rem;
       transition: all 0.2s ease;
+      min-height: 120px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
     }
     .card:hover {
       transform: translateY(-5px);
-      border-color: #58a6ff;
-      box-shadow: 0 0 15px rgba(88, 166, 255, 0.2);
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(88, 166, 255, 0.12);
     }
     .card h2 {
       margin: 0 0 0.5rem;
-      font-size: 1.3rem;
-      color: #58a6ff;
+      font-size: 1.2rem;
+      color: var(--accent);
+    }
+    .card a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .card a:focus {
+      outline: 3px solid rgba(88,166,255,0.18);
+      outline-offset: 2px;
+      border-radius: 6px;
     }
     .card p {
       margin: 0;
       font-size: 0.95rem;
-      color: #8b949e;
+      color: var(--muted);
       line-height: 1.5;
+    }
+    .meta {
+      margin-top: 0.75rem;
+      color: #9aa6b2;
+      font-size: 0.85rem;
     }
     .footer {
       text-align: center;
       padding: 2rem 0;
-      border-top: 1px solid #30363d;
-      color: #8b949e;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
       font-size: 0.9rem;
     }
+    .center { text-align:center; color:var(--muted); padding:2rem; }
 
     @media (max-width: 768px) {
       header h1 { font-size: 1.8rem; }
@@ -76,6 +104,15 @@
       main { padding: 0 1rem 3rem; }
       .card h2 { font-size: 1.1rem; }
     }
+
+    /* simple spinner */
+    .spinner {
+      width:36px;height:36px;border-radius:50%;
+      border:4px solid rgba(255,255,255,0.08);
+      border-top-color: var(--accent);
+      animation:spin 1s linear infinite;margin:20px auto;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -87,8 +124,11 @@
     </p>
   </header>
 
-  <main id="repo-list">
-    <p style="text-align:center;">Loading repositories...</p>
+  <main id="repo-list" aria-live="polite">
+    <div class="center">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>Loading repositories...</div>
+    </div>
   </main>
 
   <div class="footer">
@@ -98,33 +138,96 @@
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
 
+    function showMessage(htmlOrNode) {
+      const container = document.getElementById("repo-list");
+      container.innerHTML = "";
+      if (typeof htmlOrNode === "string") {
+        const div = document.createElement("div");
+        div.className = "center";
+        div.innerHTML = htmlOrNode;
+        container.appendChild(div);
+      } else {
+        container.appendChild(htmlOrNode);
+      }
+    }
+
     async function loadRepos() {
+      const excludedRepoName = "dzsolly.github.io";
+      const url = "https://api.github.com/users/dzsolly/repos?sort=updated&per_page=100";
+
       try {
-        const response = await fetch("https://api.github.com/users/dzsolly/repos?sort=updated");
+        const response = await fetch(url, {
+          headers: {
+            "Accept": "application/vnd.github.v3+json"
+          }
+        });
+
+        if (!response.ok) {
+          // rate limit handling & clear message
+          const remaining = response.headers.get("x-ratelimit-remaining");
+          const reset = response.headers.get("x-ratelimit-reset");
+          if (response.status === 403 && remaining === "0") {
+            const resetTime = reset ? new Date(Number(reset) * 1000) : null;
+            showMessage(`<p style="color:#ffb4b4">GitHub API rate limit reached. Try again after ${resetTime ? resetTime.toLocaleTimeString() : "a while"}.</p>`);
+          } else {
+            showMessage(`<p style="color:#ffb4b4">Failed to load repositories: ${response.status} ${response.statusText}</p>`);
+          }
+          return;
+        }
+
         const repos = await response.json();
         const container = document.getElementById("repo-list");
         container.innerHTML = "";
 
-        // Kizárjuk a GitHub Pages repo-t (index.html-t tartalmazó repo)
-        const excludedRepoName = "dzsolly.github.io";
+        // filter out the GitHub Pages repo and optionally archived/private repos
+        const filteredRepos = repos
+          .filter(repo => repo.name !== excludedRepoName && !repo.private)
+          // optional: .filter(r => !r.archived)
+          ;
 
-        const filteredRepos = repos.filter(repo => repo.name !== excludedRepoName);
+        if (!filteredRepos.length) {
+          showMessage("<p style='text-align:center;color:#9aa6b2;'>No repositories to display.</p>");
+          return;
+        }
 
         filteredRepos.forEach(repo => {
+          // Create elements safely (avoid innerHTML with user content)
           const card = document.createElement("div");
           card.className = "card";
-          card.innerHTML = `
-            <h2><a href="${repo.html_url}" target="_blank" style="text-decoration:none;color:#58a6ff;">${repo.name}</a></h2>
-            <p>${repo.description ? repo.description : "No description available."}</p>
-          `;
+
+          const h2 = document.createElement("h2");
+          const a = document.createElement("a");
+          a.href = repo.html_url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = repo.name;
+          a.setAttribute("aria-label", `${repo.name} - opens in new tab`);
+          h2.appendChild(a);
+
+          const desc = document.createElement("p");
+          desc.textContent = repo.description ? repo.description : "No description available.";
+
+          const meta = document.createElement("p");
+          meta.className = "meta";
+          const updated = repo.updated_at ? new Date(repo.updated_at).toLocaleDateString() : "";
+          meta.textContent = `${repo.stargazers_count || 0} ★ · Updated ${updated}`;
+
+          // Optionally show homepage link or language:
+          // const meta2 = document.createElement("p");
+          // meta2.className = "meta";
+          // meta2.textContent = repo.language ? repo.language : "";
+
+          // Append elements
+          card.appendChild(h2);
+          card.appendChild(desc);
+          card.appendChild(meta);
+
           container.appendChild(card);
         });
 
-        if (!filteredRepos.length) {
-          container.innerHTML = "<p style='text-align:center;color:#8b949e;'>No repositories to display.</p>";
-        }
       } catch (error) {
-        document.getElementById("repo-list").innerHTML = "<p style='text-align:center;color:#ff6b6b;'>Failed to load repositories.</p>";
+        showMessage("<p style='color:#ff6b6b;text-align:center;'>Failed to load repositories — network error.</p>");
+        console.error("loadRepos error:", error);
       }
     }
 
